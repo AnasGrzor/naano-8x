@@ -1,11 +1,13 @@
 import { ApifyClient } from "apify-client"
 import {
-  buildStats,
   hasUsableProfileData,
   isValidLinkedInProfileUrl,
   normalizePosts,
   normalizeProfile,
 } from "@/lib/linkedin"
+import { isDatabaseConfigured } from "@/lib/db"
+import { requireAuthenticatedUser } from "@/lib/db/owner"
+import { saveImportedProfile } from "@/lib/db/creator-repository"
 
 export const dynamic = "force-dynamic"
 
@@ -14,6 +16,14 @@ function jsonError(status: number, message: string) {
 }
 
 export async function POST(request: Request) {
+  // Authentication is checked first, before the body is parsed, the
+  // LinkedIn URL is validated, or ApifyClient is touched — an unauthenticated
+  // caller must not be able to trigger a paid Apify run or write any row.
+  const user = await requireAuthenticatedUser()
+  if (!user) {
+    return Response.json({ error: "Authentication required." }, { status: 401 })
+  }
+
   let body: unknown
   try {
     body = await request.json()
@@ -87,7 +97,23 @@ export async function POST(request: Request) {
     return jsonError(422, "No public profile data could be found for this URL.")
   }
 
-  const stats = buildStats(profile, posts)
+  if (!isDatabaseConfigured()) {
+    return jsonError(500, "LinkedIn import is not configured on the server.")
+  }
 
-  return Response.json({ profile, posts, stats }, { status: 200 })
+  // Persist first, then answer from what was actually stored, so the response
+  // and a later page refresh always agree.
+  try {
+    const result = await saveImportedProfile(
+      user.ownerKey,
+      profile,
+      posts,
+      user.userId
+    )
+    return Response.json(result, { status: 200 })
+  } catch (error) {
+    // Never leak SQL, connection strings or stack traces to the client.
+    console.error("Failed to persist LinkedIn import", error)
+    return jsonError(500, "Failed to save the imported profile. Please try again.")
+  }
 }

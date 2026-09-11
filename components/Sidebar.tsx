@@ -76,7 +76,7 @@ export function Sidebar() {
     >
       <div className="flex h-16 shrink-0 items-center overflow-hidden border-b border-border px-4">
         <Link href="/" className="flex items-center gap-2">
-          <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-foreground text-background">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-transparent text-background">
             <Image
               src="https://naano.com/lp/naano-logomark.png"
               alt="naano"

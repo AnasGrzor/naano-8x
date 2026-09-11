@@ -18,6 +18,49 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
+## Environment variables
+
+Copy `.env.example` to `.env` and fill in the values:
+
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` | Neon Postgres connection string. Server-only; never exposed to the client. |
+| `APIFY_API_KEY` | Apify token used for the LinkedIn import. |
+| `APIFY_PROFILE_ACTOR_ID` | Apify actor that scrapes the public profile. |
+| `APIFY_POSTS_ACTOR_ID` | Apify actor that scrapes public posts. |
+
+Never commit a real `.env`. Only `.env.example`, which holds empty placeholders, is tracked.
+
+## Database
+
+Neon Postgres accessed through Drizzle ORM. Schema lives in [`lib/db/schema.ts`](lib/db/schema.ts); the server-only client is [`lib/db/index.ts`](lib/db/index.ts).
+
+### Migration commands
+
+```bash
+# 1. Generate a new SQL migration after editing lib/db/schema.ts
+pnpm db:generate
+
+# 2. Apply pending migrations to the database in DATABASE_URL
+pnpm db:migrate
+
+# 3. Browse data in Drizzle Studio
+pnpm db:studio
+```
+
+Generated migrations are committed under `drizzle/`. Always review the generated SQL before applying it.
+
+`drizzle-kit push` is intentionally **not** exposed as a script: it mutates the schema directly and would let changes reach production without a reviewed migration. Promote schema changes by running `pnpm db:migrate` against the target environment.
+
+### Tables
+
+- `creator_profiles` — one row per imported creator, unique per `owner_key`. Flexible arrays (`experience`, `education`, `skills`) are JSONB; searchable values stay scalar columns.
+- `linkedin_posts` — public posts, unique on `(profile_id, external_id)` so re-importing updates rows instead of duplicating them. Cascades on profile delete.
+
+### Authentication placeholder
+
+Signup is not implemented yet, so all data is scoped to the temporary key `DEMO_OWNER_KEY` (`"demo-user"`) in [`lib/db/owner.ts`](lib/db/owner.ts). Replacing `getCurrentOwnerKey()` with the authenticated user id is the only change needed — the schema, queries and UI stay as they are.
+
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
 ## Learn More

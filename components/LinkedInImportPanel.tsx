@@ -4,15 +4,21 @@ import { useState } from "react"
 import { Link2, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { cn } from "@/lib/utils"
 import type { LinkedInImportResult } from "@/lib/linkedin"
 
 type ImportStatus = "idle" | "loading" | "success" | "empty" | "error"
 
 type LinkedInImportPanelProps = {
   onImported: (result: LinkedInImportResult) => void
+  /** Renders without the card chrome when nested inside another panel. */
+  embedded?: boolean
 }
 
-export function LinkedInImportPanel({ onImported }: LinkedInImportPanelProps) {
+export function LinkedInImportPanel({
+  onImported,
+  embedded = false,
+}: LinkedInImportPanelProps) {
   const [profileUrl, setProfileUrl] = useState("")
   const [status, setStatus] = useState<ImportStatus>("idle")
   const [message, setMessage] = useState<string | null>(null)
@@ -53,7 +59,14 @@ export function LinkedInImportPanel({ onImported }: LinkedInImportPanelProps) {
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5">
+    <div
+      className={cn(
+        "flex flex-col gap-3",
+        embedded
+          ? "rounded-xl border border-border p-4"
+          : "rounded-2xl border border-border bg-card p-5"
+      )}
+    >
       <div className="flex items-center gap-1.5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
         <Link2 className="size-3.5" aria-hidden="true" />
         Import LinkedIn profile

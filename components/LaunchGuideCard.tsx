@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge"
 
 export function LaunchGuideCard() {
   return (
-    <div className="flex flex-col rounded-2xl border border-border bg-card p-5">
+    <div className="flex flex-col self-start rounded-2xl border border-border bg-card p-5">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold text-foreground">

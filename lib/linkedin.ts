@@ -46,6 +46,12 @@ export type LinkedInImportResult = {
     postCount: number
     engagementCount: number
     followerCount: number | null
+    /**
+     * Estimated reach derived only from public engagement counts — LinkedIn
+     * does not expose real impressions through public scraping. `null` when
+     * there are no posts or no engagement to estimate from.
+     */
+    estimatedImpressions: number | null
   }
 }
 
@@ -194,6 +200,40 @@ export function normalizePosts(raw: unknown): NormalizedPost[] {
     })
 }
 
+/**
+ * Fallback assumed engagement rate used to back into an estimated reach from
+ * public engagement counts. Overridable via `ESTIMATED_LINKEDIN_ENGAGEMENT_RATE`
+ * so the estimate can be tuned without a code change.
+ */
+const DEFAULT_ENGAGEMENT_RATE = 0.02
+
+function getEngagementRate(): number {
+  const raw = process.env.ESTIMATED_LINKEDIN_ENGAGEMENT_RATE
+  const parsed = raw ? Number(raw) : NaN
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_ENGAGEMENT_RATE
+}
+
+/**
+ * Estimates reach from public engagement only. This is NOT LinkedIn
+ * Analytics data — LinkedIn does not expose real impressions through public
+ * profile/post scraping. Returns null when there is no engagement to
+ * estimate from, so the UI can show "—" instead of a misleading zero.
+ */
+export function estimateImpressions(posts: NormalizedPost[]): number | null {
+  const engagementRate = getEngagementRate()
+
+  const total = posts.reduce((sum, post) => {
+    const engagements = (post.reactions ?? 0) + (post.comments ?? 0) + (post.shares ?? 0)
+    return sum + Math.round(engagements / engagementRate)
+  }, 0)
+
+  const hasEngagement = posts.some(
+    (post) => (post.reactions ?? 0) + (post.comments ?? 0) + (post.shares ?? 0) > 0
+  )
+
+  return posts.length > 0 && hasEngagement ? total : null
+}
+
 export function buildStats(
   profile: NormalizedProfile,
   posts: NormalizedPost[]
@@ -206,6 +246,7 @@ export function buildStats(
     postCount: posts.length,
     engagementCount,
     followerCount: profile.followers,
+    estimatedImpressions: estimateImpressions(posts),
   }
 }
 
