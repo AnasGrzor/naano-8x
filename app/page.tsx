@@ -1,8 +1,5 @@
-import { Eye, FileText, Activity, Users2 } from "lucide-react"
 import { Topbar } from "@/components/Topbar"
-import { StatCard } from "@/components/StatCard"
-import { CreatorCardPreview } from "@/components/CreatorCardPreview"
-import { LaunchGuideCard } from "@/components/LaunchGuideCard"
+import { Dashboard } from "@/components/Dashboard"
 
 export default function Home() {
   return (
@@ -20,37 +17,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            icon={Eye}
-            label="Public post reach"
-            value="—"
-            caption="Import in progress"
-          />
-          <StatCard
-            icon={FileText}
-            label="Public posts"
-            value="0"
-            caption="Original LinkedIn posts found"
-          />
-          <StatCard
-            icon={Activity}
-            label="Public engagements"
-            value="0"
-            caption="Reactions, comments and reposts"
-          />
-          <StatCard
-            icon={Users2}
-            label="LinkedIn followers"
-            value="696"
-            caption="Imported from the public profile"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
-          <CreatorCardPreview />
-          <LaunchGuideCard />
-        </div>
+        <Dashboard />
       </main>
     </div>
   )
