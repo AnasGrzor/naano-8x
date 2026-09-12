@@ -36,10 +36,16 @@ export function CreatorCardPreview({
   const [chosenCost, setChosenCost] = useState("")
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setChosenCost(window.localStorage.getItem("naano:price-per-post") ?? "")
-    }, 0)
-    return () => window.clearTimeout(timer)
+    let active = true
+    fetch("/api/profile/pricing")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((pricing: { pricePerPost?: string | null } | null) => {
+        if (active) setChosenCost(pricing?.pricePerPost ?? "")
+      })
+      .catch(() => undefined)
+    return () => {
+      active = false
+    }
   }, [])
   const displayName = profile?.name ?? null
   const headline = profile?.headline ?? null

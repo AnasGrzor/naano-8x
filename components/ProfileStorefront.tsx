@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useId, useState } from "react"
+import { useId, useState } from "react"
 import {
   Briefcase,
   Check,
@@ -18,6 +18,11 @@ import { Button } from "@/components/ui/button"
 import { ProfileEditView } from "@/components/ProfileEditView"
 import { cn } from "@/lib/utils"
 import type { LinkedInImportResult } from "@/lib/linkedin"
+
+type CreatorPricing = {
+  pricePerPost: string | null
+  bundle: string | null
+}
 
 type EditPreviewMode = "edit" | "preview"
 
@@ -66,32 +71,28 @@ function EditPreviewToggle({
 type ProfileStorefrontProps = {
   /** Persisted import for the current owner, loaded on the server. */
   importResult?: LinkedInImportResult | null
+  pricing?: CreatorPricing | null
 }
 
-export function ProfileStorefront({ importResult = null }: ProfileStorefrontProps) {
+export function ProfileStorefront({ importResult = null, pricing = null }: ProfileStorefrontProps) {
   const [mode, setMode] = useState<EditPreviewMode>("preview")
-  const [pricePerPost, setPricePerPost] = useState(() =>
-    ""
-  )
-  const [bundle, setBundle] = useState("")
-  const [pricingLoaded, setPricingLoaded] = useState(false)
+  const [pricePerPost, setPricePerPost] = useState(pricing?.pricePerPost ?? "")
+  const [bundle, setBundle] = useState(pricing?.bundle ?? "")
+  const [pricingMessage, setPricingMessage] = useState<string | null>(null)
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setPricePerPost(window.localStorage.getItem("naano:price-per-post") ?? "")
-      setBundle(window.localStorage.getItem("naano:bundle") ?? "")
-      setPricingLoaded(true)
-    }, 0)
-    return () => window.clearTimeout(timer)
-  }, [])
-
-  useEffect(() => {
-    if (!pricingLoaded) return
-    if (pricePerPost) window.localStorage.setItem("naano:price-per-post", pricePerPost)
-    else window.localStorage.removeItem("naano:price-per-post")
-    if (bundle) window.localStorage.setItem("naano:bundle", bundle)
-    else window.localStorage.removeItem("naano:bundle")
-  }, [bundle, pricePerPost, pricingLoaded])
+  async function savePricing() {
+    setPricingMessage(null)
+    const response = await fetch("/api/profile/pricing", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pricePerPost, bundle }),
+    })
+    if (!response.ok) {
+      setPricingMessage("Could not save pricing.")
+      throw new Error("Could not save pricing.")
+    }
+    setPricingMessage("Pricing saved.")
+  }
 
   return (
     <section
@@ -127,6 +128,8 @@ export function ProfileStorefront({ importResult = null }: ProfileStorefrontProp
             setPricePerPost(next.pricePerPost)
             setBundle(next.bundle)
           }}
+          onPricingSave={savePricing}
+          pricingMessage={pricingMessage}
         />
       ) : (
         <>

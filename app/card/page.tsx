@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 
 import { Topbar } from "@/components/Topbar"
 import { ProfileStorefront } from "@/components/ProfileStorefront"
-import { getStoredImport } from "@/lib/db/creator-repository"
+import { getStoredImport, getStoredPricing } from "@/lib/db/creator-repository"
 import { getViewer, requireViewer } from "@/lib/db/owner"
 
 export const metadata: Metadata = {
@@ -18,9 +18,11 @@ export default async function CardPage() {
   if (!viewer) redirect("/sign-in")
 
   let importResult = null
+  let pricing = null
   try {
     const { ownerKey, userId } = await getViewer()
     importResult = await getStoredImport(ownerKey, userId)
+    if (userId) pricing = await getStoredPricing(ownerKey, userId)
   } catch (error) {
     // A read failure degrades to the empty/import state, not a crash.
     console.error("Failed to load the stored LinkedIn import", error)
@@ -31,7 +33,7 @@ export default async function CardPage() {
       <Topbar />
 
       <main className="max-w-full px-4 py-[30px] sm:px-8">
-        <ProfileStorefront importResult={importResult} />
+          <ProfileStorefront importResult={importResult} pricing={pricing} />
       </main>
     </div>
   )

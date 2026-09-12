@@ -83,6 +83,8 @@ type ProfileEditViewProps = {
   pricePerPost: string
   bundle: string
   onPricingChange: (pricing: { pricePerPost: string; bundle: string }) => void
+  onPricingSave: () => Promise<void>
+  pricingMessage: string | null
 }
 
 export function ProfileEditView({
@@ -90,6 +92,8 @@ export function ProfileEditView({
   pricePerPost,
   bundle,
   onPricingChange,
+  onPricingSave,
+  pricingMessage,
 }: ProfileEditViewProps) {
   const router = useRouter()
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -296,9 +300,17 @@ export function ProfileEditView({
                   />
                 </div>
               </div>
-              <Button type="button" size="sm" onClick={() => setPricingEditing(false)}>
+              <Button
+                type="button"
+                size="sm"
+                onClick={async () => {
+                  await onPricingSave()
+                  setPricingEditing(false)
+                }}
+              >
                 Save price &amp; bundles
               </Button>
+              {pricingMessage ? <p className="text-xs text-muted-foreground">{pricingMessage}</p> : null}
             </div>
           ) : (
             <>

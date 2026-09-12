@@ -238,3 +238,53 @@ export async function getStoredImport(
     stats: buildStats(normalizedProfile, normalizedPosts),
   }
 }
+
+export type CreatorPricing = {
+  pricePerPost: string | null
+  bundle: string | null
+}
+
+export async function getStoredPricing(
+  ownerKey: string,
+  userId: string
+): Promise<CreatorPricing | null> {
+  if (!isDatabaseConfigured()) return null
+
+  const db = getDb()
+  const [row] = await db
+    .select({
+      pricePerPost: creatorProfiles.pricePerPost,
+      bundle: creatorProfiles.bundle,
+    })
+    .from(creatorProfiles)
+    .where(
+      and(eq(creatorProfiles.ownerKey, ownerKey), eq(creatorProfiles.userId, userId))
+    )
+    .limit(1)
+
+  return row ?? null
+}
+
+export async function updateStoredPricing(
+  ownerKey: string,
+  userId: string,
+  pricing: CreatorPricing
+): Promise<CreatorPricing | null> {
+  const db = getDb()
+  const [row] = await db
+    .update(creatorProfiles)
+    .set({
+      pricePerPost: pricing.pricePerPost,
+      bundle: pricing.bundle,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(eq(creatorProfiles.ownerKey, ownerKey), eq(creatorProfiles.userId, userId))
+    )
+    .returning({
+      pricePerPost: creatorProfiles.pricePerPost,
+      bundle: creatorProfiles.bundle,
+    })
+
+  return row ?? null
+}

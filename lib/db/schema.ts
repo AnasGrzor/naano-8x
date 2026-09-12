@@ -42,6 +42,8 @@ export const creatorProfiles = pgTable("creator_profiles", {
   location: text("location"),
   avatarUrl: text("avatar_url"),
   followers: integer("followers"),
+  pricePerPost: text("price_per_post"),
+  bundle: text("bundle"),
   // JSONB is used only for the flexible, shape-unstable profile arrays.
   experience: jsonb("experience")
     .$type<unknown[]>()
