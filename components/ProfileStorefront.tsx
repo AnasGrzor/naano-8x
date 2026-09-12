@@ -1,6 +1,6 @@
 "use client"
 
-import { useId, useState } from "react"
+import { useEffect, useId, useState } from "react"
 import {
   Briefcase,
   Check,
@@ -70,6 +70,28 @@ type ProfileStorefrontProps = {
 
 export function ProfileStorefront({ importResult = null }: ProfileStorefrontProps) {
   const [mode, setMode] = useState<EditPreviewMode>("preview")
+  const [pricePerPost, setPricePerPost] = useState(() =>
+    ""
+  )
+  const [bundle, setBundle] = useState("")
+  const [pricingLoaded, setPricingLoaded] = useState(false)
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setPricePerPost(window.localStorage.getItem("naano:price-per-post") ?? "")
+      setBundle(window.localStorage.getItem("naano:bundle") ?? "")
+      setPricingLoaded(true)
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [])
+
+  useEffect(() => {
+    if (!pricingLoaded) return
+    if (pricePerPost) window.localStorage.setItem("naano:price-per-post", pricePerPost)
+    else window.localStorage.removeItem("naano:price-per-post")
+    if (bundle) window.localStorage.setItem("naano:bundle", bundle)
+    else window.localStorage.removeItem("naano:bundle")
+  }, [bundle, pricePerPost, pricingLoaded])
 
   return (
     <section
@@ -97,11 +119,22 @@ export function ProfileStorefront({ importResult = null }: ProfileStorefrontProp
       </header>
 
       {mode === "edit" ? (
-        <ProfileEditView profile={importResult?.profile ?? null} />
+        <ProfileEditView
+          profile={importResult?.profile ?? null}
+          pricePerPost={pricePerPost}
+          bundle={bundle}
+          onPricingChange={(next) => {
+            setPricePerPost(next.pricePerPost)
+            setBundle(next.bundle)
+          }}
+        />
       ) : (
         <>
           <DealLinkHero />
-          <PublicProfileCard importResult={importResult ?? null} />
+          <PublicProfileCard
+            importResult={importResult ?? null}
+            pricePerPost={pricePerPost}
+          />
         </>
       )}
     </section>
@@ -212,8 +245,10 @@ function averageMetric(total: number, count: number): number | null {
 
 function PublicProfileCard({
   importResult,
+  pricePerPost,
 }: {
   importResult: LinkedInImportResult | null
+  pricePerPost: string
 }) {
   const [flipped, setFlipped] = useState(false)
   const profile = importResult?.profile ?? null
@@ -254,7 +289,12 @@ function PublicProfileCard({
           )}
         >
           <div className="absolute inset-0 overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_18px_35px_-20px_rgba(15,23,42,0.45)] [backface-visibility:hidden]">
-            <CardSurface profile={profile} posts={posts} estimatedImpressions={estimatedImpressions} />
+            <CardSurface
+              profile={profile}
+              posts={posts}
+              estimatedImpressions={estimatedImpressions}
+              pricePerPost={pricePerPost}
+            />
           </div>
 
           <div className="absolute inset-0 overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_18px_35px_-20px_rgba(15,23,42,0.45)] [backface-visibility:hidden] [transform:rotateY(180deg)]">
@@ -318,10 +358,12 @@ function CardSurface({
   profile,
   posts,
   estimatedImpressions,
+  pricePerPost,
 }: {
   profile: LinkedInImportResult["profile"] | null
   posts: LinkedInImportResult["posts"]
   estimatedImpressions: number | null
+  pricePerPost: string
 }) {
   return (
     <>
@@ -384,7 +426,7 @@ function CardSurface({
           <p className="mt-1 text-[10px] text-slate-400">Est. impressions</p>
         </div>
         <div className="px-2 py-5 text-center">
-          <p className="text-xl font-bold text-slate-800">—</p>
+          <p className="text-xl font-bold text-slate-800">{pricePerPost || "—"}</p>
           <p className="mt-1 text-[10px] text-slate-400">Chosen cost</p>
         </div>
       </div>

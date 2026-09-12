@@ -16,6 +16,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import type { NormalizedProfile } from "@/lib/linkedin"
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -79,12 +80,21 @@ function SectionCard({ title, action, children }: SectionCardProps) {
 
 type ProfileEditViewProps = {
   profile: NormalizedProfile | null
+  pricePerPost: string
+  bundle: string
+  onPricingChange: (pricing: { pricePerPost: string; bundle: string }) => void
 }
 
-export function ProfileEditView({ profile }: ProfileEditViewProps) {
+export function ProfileEditView({
+  profile,
+  pricePerPost,
+  bundle,
+  onPricingChange,
+}: ProfileEditViewProps) {
   const router = useRouter()
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [refreshMessage, setRefreshMessage] = useState<string | null>(null)
+  const [pricingEditing, setPricingEditing] = useState(false)
   const name = profile?.name ?? null
   const headline = profile?.headline ?? null
   const about = profile?.about ?? null
@@ -254,33 +264,70 @@ export function ProfileEditView({ profile }: ProfileEditViewProps) {
         </SectionCard>
 
         <SectionCard title="Pricing">
-          {/* No pricing model exists in the persisted schema yet, so both
-              values are an honest empty state, not invented numbers. */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="rounded-xl border border-border px-4 py-3.5">
-              <p className="text-lg leading-7 font-bold text-foreground">—</p>
-              <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
-                Price per post
-              </p>
+          {pricingEditing ? (
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="price-per-post" className="text-xs font-medium text-muted-foreground">
+                    Price per post
+                  </label>
+                  <Input
+                    id="price-per-post"
+                    value={pricePerPost}
+                    onChange={(event) =>
+                      onPricingChange({ pricePerPost: event.target.value, bundle })
+                    }
+                    placeholder="€240"
+                    className="mt-1.5 h-11"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="bundle" className="text-xs font-medium text-muted-foreground">
+                    Bundle
+                  </label>
+                  <Input
+                    id="bundle"
+                    value={bundle}
+                    onChange={(event) =>
+                      onPricingChange({ pricePerPost, bundle: event.target.value })
+                    }
+                    placeholder="e.g. 3 posts · €600"
+                    className="mt-1.5 h-11"
+                  />
+                </div>
+              </div>
+              <Button type="button" size="sm" onClick={() => setPricingEditing(false)}>
+                Save price &amp; bundles
+              </Button>
             </div>
-            <div className="rounded-xl border border-border px-4 py-3.5">
-              <p className="text-lg leading-7 font-bold text-foreground">
-                None set
-              </p>
-              <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
-                Bundle
-              </p>
-            </div>
-          </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-border px-4 py-3.5">
+                  <p className="text-lg leading-7 font-bold text-foreground">{pricePerPost || "—"}</p>
+                  <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                    Price per post
+                  </p>
+                </div>
+                <div className="rounded-xl border border-border px-4 py-3.5">
+                  <p className="text-lg leading-7 font-bold text-foreground">{bundle || "None set"}</p>
+                  <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                    Bundle
+                  </p>
+                </div>
+              </div>
 
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="mt-3.5"
-          >
-            Edit price &amp; bundles
-          </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-3.5"
+                onClick={() => setPricingEditing(true)}
+              >
+                Edit price &amp; bundles
+              </Button>
+            </>
+          )}
         </SectionCard>
       </div>
 

@@ -22,7 +22,9 @@ export function Topbar() {
   const [profileImage, setProfileImage] = useState<string | null>(null)
   const [signingOut, setSigningOut] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const notificationsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!session?.user) return
@@ -44,8 +46,12 @@ export function Topbar() {
     if (!menuOpen) return
 
     function handlePointerDown(event: PointerEvent) {
-      if (!menuRef.current?.contains(event.target as Node)) {
+      if (
+        !menuRef.current?.contains(event.target as Node) &&
+        !notificationsRef.current?.contains(event.target as Node)
+      ) {
         setMenuOpen(false)
+        setNotificationsOpen(false)
       }
     }
 
@@ -63,10 +69,15 @@ export function Topbar() {
 
   return (
     <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-end gap-2 border-b border-border bg-background px-8">
-      <div className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm font-medium text-foreground">
+      <button
+        type="button"
+        aria-label="Open earnings"
+        onClick={() => router.push("/earnings")}
+        className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+      >
         <CreditCard className="size-4 text-muted-foreground" aria-hidden="true" />
         €0
-      </div>
+      </button>
 
       <div className="flex items-center rounded-full border border-border p-0.5 text-sm font-medium">
         {(["EN", "FR"] as const).map((lang) => (
@@ -87,13 +98,40 @@ export function Topbar() {
         ))}
       </div>
 
-      <button
-        type="button"
-        aria-label="Notifications"
-        className="flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-      >
-        <Bell className="size-[18px]" aria-hidden="true" />
-      </button>
+      <div ref={notificationsRef} className="relative">
+        <button
+          type="button"
+          aria-label="Notifications"
+          aria-expanded={notificationsOpen}
+          onClick={() => {
+            setNotificationsOpen((open) => !open)
+            setMenuOpen(false)
+          }}
+          className="flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <Bell className="size-[18px]" aria-hidden="true" />
+        </button>
+
+        {notificationsOpen ? (
+          <div className="absolute top-[calc(100%+10px)] right-0 z-50 h-[260px] w-[376px] overflow-hidden rounded-2xl border border-border bg-card shadow-[0_12px_32px_-14px_rgba(15,23,42,0.35)]">
+            <div className="flex h-14 items-center gap-3 border-b border-border px-4">
+              <span className="flex size-9 items-center justify-center rounded-xl border border-primary/20 bg-primary/5 text-primary">
+                <Bell className="size-[18px]" aria-hidden="true" />
+              </span>
+              <h2 className="text-base font-bold text-foreground">Notifications</h2>
+            </div>
+            <div className="flex h-[204px] flex-col items-center justify-center px-5 text-center">
+              <span className="flex size-6 items-center justify-center rounded-full border-2 border-slate-300 text-slate-400">
+                <span className="text-[13px] leading-none">✓</span>
+              </span>
+              <p className="mt-3 text-sm font-bold text-foreground">You’re all caught up</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                New activity on your collaborations will show up here.
+              </p>
+            </div>
+          </div>
+        ) : null}
+      </div>
 
       {isPending ? null : session?.user ? (
         <div ref={menuRef} className="relative">

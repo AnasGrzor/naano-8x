@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image";
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { CalendarDays, Copy, IdCard, Share2 } from "lucide-react"
@@ -33,6 +33,14 @@ export function CreatorCardPreview({
   onImported,
 }: CreatorCardPreviewProps) {
   const [showImport, setShowImport] = useState(false)
+  const [chosenCost, setChosenCost] = useState("")
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setChosenCost(window.localStorage.getItem("naano:price-per-post") ?? "")
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [])
   const displayName = profile?.name ?? null
   const headline = profile?.headline ?? null
   const specialties = profile?.skills?.slice(0, 3).join(" · ") || null
@@ -160,7 +168,7 @@ export function CreatorCardPreview({
             <p className="mt-1 text-[11px] text-slate-400">Estimated reach</p>
           </div>
           <div className="px-2 py-5 text-center">
-            <p className="text-[23px] font-bold tracking-[-0.04em] text-slate-800">—</p>
+            <p className="text-[23px] font-bold tracking-[-0.04em] text-slate-800">{chosenCost || "—"}</p>
             <p className="mt-1 text-[11px] text-slate-400">Chosen cost</p>
           </div>
         </div>
