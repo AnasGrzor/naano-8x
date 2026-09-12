@@ -3,7 +3,7 @@ import { Plus_Jakarta_Sans, Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Sidebar } from "@/components/Sidebar";
+import { AppShell } from "@/components/AppShell";
 import { GlobalAIBar } from "@/components/GlobalAIBar";
 import { GuidedTour } from "@/components/GuidedTour";
 
@@ -27,10 +27,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <TooltipProvider>
-          <div className="flex min-h-svh w-full">
-            <Sidebar />
-            <div className="flex min-w-0 flex-1 flex-col pb-24">{children}</div>
-          </div>
+          <AppShell>{children}</AppShell>
           <GlobalAIBar />
           <GuidedTour />
         </TooltipProvider>

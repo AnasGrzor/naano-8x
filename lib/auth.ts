@@ -40,6 +40,25 @@ const trustedOrigins = [
   ]),
 ]
 
+const socialProviders = {
+  ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+    ? {
+        google: {
+          clientId: process.env.GOOGLE_CLIENT_ID,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        },
+      }
+    : {}),
+  ...(process.env.LINKEDIN_CLIENT_ID && process.env.LINKEDIN_CLIENT_SECRET
+    ? {
+        linkedin: {
+          clientId: process.env.LINKEDIN_CLIENT_ID,
+          clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
+        },
+      }
+    : {}),
+}
+
 /**
  * Server-side auth instance.
  *
@@ -58,6 +77,7 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
+  socialProviders,
   // `nextCookies` must stay last so it can attach Set-Cookie headers after
   // every other hook has run.
   plugins: [nextCookies()],
