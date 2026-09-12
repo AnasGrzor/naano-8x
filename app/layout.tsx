@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Sidebar } from "@/components/Sidebar";
 import { GlobalAIBar } from "@/components/GlobalAIBar";
+import { GuidedTour } from "@/components/GuidedTour";
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <div className="flex min-w-0 flex-1 flex-col pb-24">{children}</div>
           </div>
           <GlobalAIBar />
+          <GuidedTour />
         </TooltipProvider>
       </body>
     </html>

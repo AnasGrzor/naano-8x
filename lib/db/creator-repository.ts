@@ -47,12 +47,14 @@ function rowToProfile(row: CreatorProfileRow): NormalizedProfile {
     profileUrl: row.linkedinUrl,
     name: row.name,
     headline: row.headline,
+    about: row.about,
     location: row.location,
     avatarUrl: row.avatarUrl,
     followers: row.followers,
     experience: toArray(row.experience),
     education: toArray(row.education),
     skills: toStringArray(row.skills),
+    updatedAt: row.updatedAt.toISOString(),
   }
 }
 
@@ -98,6 +100,7 @@ export async function saveImportedProfile(
         linkedinUrl: profile.profileUrl,
         name: profile.name,
         headline: profile.headline,
+        about: profile.about,
         location: profile.location,
         avatarUrl: profile.avatarUrl,
         followers: profile.followers,
@@ -112,6 +115,7 @@ export async function saveImportedProfile(
           linkedinUrl: profile.profileUrl,
           name: profile.name,
           headline: profile.headline,
+          about: profile.about,
           location: profile.location,
           avatarUrl: profile.avatarUrl,
           followers: profile.followers,

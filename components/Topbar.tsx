@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Bell, CreditCard, LogOut } from "lucide-react"
+import { Bell, CreditCard, LayoutGrid, Link2, LogOut, Settings } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarBadge, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { authClient, useSession } from "@/lib/auth-client"
@@ -19,7 +19,39 @@ export function Topbar() {
   const [locale, setLocale] = useState<"EN" | "FR">("EN")
   const router = useRouter()
   const { data: session, isPending } = useSession()
+  const [profileImage, setProfileImage] = useState<string | null>(null)
   const [signingOut, setSigningOut] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!session?.user) return
+
+    let cancelled = false
+    fetch("/api/profile/avatar")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: { avatarUrl?: string | null } | null) => {
+        if (!cancelled && data?.avatarUrl) setProfileImage(data.avatarUrl)
+      })
+      .catch(() => undefined)
+
+    return () => {
+      cancelled = true
+    }
+  }, [session?.user])
+
+  useEffect(() => {
+    if (!menuOpen) return
+
+    function handlePointerDown(event: PointerEvent) {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown)
+    return () => document.removeEventListener("pointerdown", handlePointerDown)
+  }, [menuOpen])
 
   async function handleSignOut() {
     setSigningOut(true)
@@ -64,29 +96,77 @@ export function Topbar() {
       </button>
 
       {isPending ? null : session?.user ? (
-        <div className="flex items-center gap-2">
-          <Avatar>
-            {session.user.image ? (
-              <AvatarImage
-                src={session.user.image}
-                alt={session.user.name || session.user.email}
-              />
-            ) : null}
-            <AvatarFallback>
-              {initialsOf(session.user.name, session.user.email)}
-            </AvatarFallback>
-            <AvatarBadge className="bg-emerald-500" />
-          </Avatar>
+        <div ref={menuRef} className="relative">
           <button
             type="button"
-            onClick={handleSignOut}
-            disabled={signingOut}
-            aria-label="Sign out"
-            title="Sign out"
-            className="flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+            aria-label="Open account menu"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((open) => !open)}
+            className="rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
-            <LogOut className="size-[18px]" aria-hidden="true" />
+            <Avatar>
+              {profileImage || session.user.image ? (
+                <AvatarImage
+                  src={profileImage || session.user.image || undefined}
+                  alt={session.user.name || session.user.email}
+                />
+              ) : null}
+              <AvatarFallback>
+                {initialsOf(session.user.name, session.user.email)}
+              </AvatarFallback>
+              <AvatarBadge className="bg-emerald-500" />
+            </Avatar>
           </button>
+
+          {menuOpen ? (
+            <div className="absolute top-[calc(100%+8px)] right-0 z-50 w-[248px] rounded-2xl border border-border bg-card p-2 shadow-[0_10px_28px_-12px_rgba(15,23,42,0.35)]">
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false)
+                  router.push("/integrations")
+                }}
+                className="flex h-10 w-full items-center gap-3 rounded-xl px-3 text-sm text-foreground transition-colors hover:bg-muted"
+              >
+                <Link2 className="size-[18px] text-muted-foreground" aria-hidden="true" />
+                Integrations
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false)
+                  router.push("/settings")
+                }}
+                className="flex h-10 w-full items-center gap-3 rounded-xl px-3 text-sm text-foreground transition-colors hover:bg-muted"
+              >
+                <Settings className="size-[18px] text-muted-foreground" aria-hidden="true" />
+                Settings
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false)
+                  router.push("/card?tour=1&step=1")
+                }}
+                className="flex h-10 w-full items-center gap-3 rounded-xl px-3 text-sm text-foreground transition-colors hover:bg-muted"
+              >
+                <LayoutGrid className="size-[18px] text-muted-foreground" aria-hidden="true" />
+                Guided tour
+              </button>
+
+              <div className="my-2 h-px bg-border" />
+
+              <button
+                type="button"
+                onClick={handleSignOut}
+                disabled={signingOut}
+                className="flex h-10 w-full items-center gap-3 rounded-xl px-3 text-sm text-foreground transition-colors hover:bg-muted disabled:opacity-50"
+              >
+                <LogOut className="size-[18px] text-muted-foreground" aria-hidden="true" />
+                {signingOut ? "Signing out…" : "Sign out"}
+              </button>
+            </div>
+          ) : null}
         </div>
       ) : (
         <Link

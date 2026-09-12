@@ -36,6 +36,9 @@ export const creatorProfiles = pgTable("creator_profiles", {
   linkedinUrl: text("linkedin_url").notNull(),
   name: text("name"),
   headline: text("headline"),
+  // Full "About" / summary section from the public profile. Separate from
+  // headline (a one-line title) — this is the longer free-text bio.
+  about: text("about"),
   location: text("location"),
   avatarUrl: text("avatar_url"),
   followers: integer("followers"),

@@ -20,12 +20,20 @@ export type NormalizedProfile = {
   profileUrl: string
   name: string | null
   headline: string | null
+  /** Full "About" / summary section from the public profile, when present. */
+  about: string | null
   location: string | null
   avatarUrl: string | null
   followers: number | null
   experience: unknown[]
   education: unknown[]
   skills: string[]
+  /**
+   * When the persisted row was last written. Only set when the profile comes
+   * from the database (`rowToProfile`) — a freshly normalized Apify response
+   * has no persisted timestamp yet, so it stays null.
+   */
+  updatedAt: string | null
 }
 
 export type NormalizedPost = {
@@ -86,6 +94,18 @@ function toStringArray(value: unknown): string[] {
     .filter((item): item is string => Boolean(item))
 }
 
+/**
+ * Splits a delimited skills summary (e.g. harvestapi's `topSkills`:
+ * "Pharmacology • Patient Counseling") into individual skill strings.
+ */
+function toSkillsFromDelimitedString(value: unknown): string[] {
+  if (typeof value !== "string") return []
+  return value
+    .split(/[•·,;|]/)
+    .map((skill) => skill.trim())
+    .filter(Boolean)
+}
+
 function pick(source: Record<string, unknown>, keys: string[]): unknown {
   for (const key of keys) {
     if (source[key] !== undefined && source[key] !== null) return source[key]
@@ -106,12 +126,14 @@ export function normalizeProfile(
       profileUrl,
       name: null,
       headline: null,
+      about: null,
       location: null,
       avatarUrl: null,
       followers: null,
       experience: [],
       education: [],
       skills: [],
+      updatedAt: null,
     }
   }
 
@@ -134,10 +156,17 @@ export function normalizeProfile(
     toStringOrNull(profilePicture?.url) ??
     toStringOrNull(pick(item, ["photo", "avatarUrl", "profilePic", "imageUrl"]))
 
+  // `skills` (an array) covers actors that emit it directly; harvestapi's
+  // profile scraper instead emits `topSkills` as one delimited string
+  // ("Pharmacology • Patient Counseling").
+  const skills = toStringArray(pick(item, ["skills"]))
+  const skillsFromTopSkills = toSkillsFromDelimitedString(item.topSkills)
+
   return {
     profileUrl,
     name,
     headline: toStringOrNull(pick(item, ["headline", "title", "occupation"])),
+    about: toStringOrNull(pick(item, ["about", "summary", "bio"])),
     location: locationText,
     avatarUrl,
     followers: toNumberOrNull(
@@ -145,7 +174,8 @@ export function normalizeProfile(
     ),
     experience: toArray(pick(item, ["experience", "currentPosition", "experiences", "positions"])),
     education: toArray(pick(item, ["education", "profileTopEducation", "educations", "schools"])),
-    skills: toStringArray(pick(item, ["skills"])),
+    skills: skills.length > 0 ? skills : skillsFromTopSkills,
+    updatedAt: null,
   }
 }
 

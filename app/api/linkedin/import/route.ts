@@ -7,9 +7,14 @@ import {
 } from "@/lib/linkedin"
 import { isDatabaseConfigured } from "@/lib/db"
 import { requireAuthenticatedUser } from "@/lib/db/owner"
-import { saveImportedProfile } from "@/lib/db/creator-repository"
+import {
+  getStoredImport,
+  saveImportedProfile,
+} from "@/lib/db/creator-repository"
 
 export const dynamic = "force-dynamic"
+
+const REFRESH_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000
 
 function jsonError(status: number, message: string) {
   return Response.json({ error: message }, { status })
@@ -45,6 +50,28 @@ export async function POST(request: Request) {
     return jsonError(
       400,
       "profileUrl must be a valid public LinkedIn profile URL (e.g. https://www.linkedin.com/in/username)."
+    )
+  }
+
+  // The first import is allowed immediately. Once a profile exists, the
+  // persisted update timestamp is the server-side source of truth for the
+  // weekly refresh window.
+  const existingImport = await getStoredImport(user.ownerKey, user.userId)
+  const lastUpdatedAt = existingImport?.profile.updatedAt
+    ? new Date(existingImport.profile.updatedAt).getTime()
+    : null
+  const nextAvailableAt =
+    lastUpdatedAt && Number.isFinite(lastUpdatedAt)
+      ? lastUpdatedAt + REFRESH_INTERVAL_MS
+      : null
+
+  if (nextAvailableAt && Date.now() < nextAvailableAt) {
+    return Response.json(
+      {
+        error: "Your profile can only be refreshed once a week.",
+        nextAvailableAt: new Date(nextAvailableAt).toISOString(),
+      },
+      { status: 429 }
     )
   }
 
